@@ -2,34 +2,38 @@ name: SonarCloud
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ main ]
+    branches: [ "main" ]
 
 jobs:
   build:
-    name: Build and analyze with SonarCloud
-    runs-on: ubuntu-latest   # Usamos Linux para evitar problemas de PowerShell
+    name: Build and Analyze with SonarCloud
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0     # IMPORTANTE para evitar "Not computed"
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
-          distribution: 'zulu'
+          java-version: "17"
+          distribution: "zulu"
           cache: maven
 
       - name: Build and analyze with SonarCloud
-        # Carpeta donde está tu pom.xml
-        working-directory: lamalacalculadorajava_fixed
+        working-directory: ./lamalacalculadorajava_fixed
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+          mvn -B clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            -DskipTests \
             -Dsonar.projectKey=Saenz10200_lamalacalculadorajava \
             -Dsonar.organization=saenz10200 \
-            -Dsonar.host.url=https://sonarcloud.io
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.java.coveragePlugin=jacoco \
+            -Dsonar.scm.forceReloadAll=true
