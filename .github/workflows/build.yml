@@ -1,49 +1,35 @@
-name: SonarQube Cloud
+name: SonarCloud
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-    types: [opened, synchronize, reopened]
+    branches: [ main ]
 
 jobs:
   build:
     name: Build and analyze with SonarCloud
-    runs-on: windows-latest
+    runs-on: ubuntu-latest   # Usamos Linux para evitar problemas de PowerShell
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Necesario para SonarCloud
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: "17"
-          distribution: "zulu"
-
-      - name: Cache SonarCloud packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
-
-      - name: Cache Maven packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
+          java-version: '17'
+          distribution: 'zulu'
+          cache: maven
 
       - name: Build and analyze with SonarCloud
+        # Carpeta donde está tu pom.xml
+        working-directory: lamalacalculadorajava_fixed
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # Para PR decoration
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}     # Tu token de SonarCloud
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
             -Dsonar.projectKey=Saenz10200_lamalacalculadorajava \
-            -Dsonar.organization=saenz10200
-            # ↑ Ajusta estos dos valores EXACTAMENTE como salen en SonarCloud
+            -Dsonar.organization=saenz10200 \
+            -Dsonar.host.url=https://sonarcloud.io
