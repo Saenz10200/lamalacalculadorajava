@@ -1,0 +1,54 @@
+name: SonarCloud Java
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  build:
+    name: Build and analyze with SonarCloud
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Descargar el código del repo
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # necesario para que SonarCloud vea el historial
+
+      # 2. Configurar JDK 17
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'zulu'
+
+      # 3. Cache de dependencias Maven (para que las próximas builds sean más rápidas)
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-m2-
+
+      # 4. Compilar y ejecutar tests con Maven
+      #    OJO: el pom.xml está dentro de lamalacalculadorajava_fixed
+      - name: Build with Maven
+        working-directory: lamalacalculadorajava_fixed
+        run: mvn -B verify
+
+      # 5. Análisis con SonarCloud
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          projectBaseDir: lamalacalculadorajava_fixed
+          args: >
+            -Dsonar.projectKey=Saenz10200_lamalacalculadorajava
+            -Dsonar.organization=Saenz10200
+            -Dsonar.host.url=https://sonarcloud.io
